@@ -1,0 +1,8 @@
+
+# creating python environment venv:
+python -m venv venv
+# Activating 
+python environment: venv\Scripts\Activate
+# For security in venv.
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted -Force
+
