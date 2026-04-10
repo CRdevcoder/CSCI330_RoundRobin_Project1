@@ -1,12 +1,12 @@
 import csv
 import sys # handles command line arguements
-import src.processModule
+import src.processModule as pm
 
-# "..\\input" + name of file in folder.
+# ".\\input" + name of file in folder.
+# .\\input\sample1.csv
 
 # reads csv input and returns data list.
 def readFileInput( fileLocation : str) -> list[tuple[int,...]] :
-
     # stores processor data args.
     dataList : list[tuple[int,...]] = []
 
@@ -39,15 +39,21 @@ def readFileInput( fileLocation : str) -> list[tuple[int,...]] :
     
     return dataList
     pass
-        
-def parseCommandLineArgs():
-    
-    if len(sys.argv) == 0:
-        print("NO ARGS")
-        return
 
-    arg1 = sys.argv[1]
-    arg2 = sys.argv[2]
+# reads csv file and returns inputs for simulation.
+def parseCommandLineArgs() -> tuple[list[pm.Process], int]:
+
+    print("ARGS: ",sys.argv)
+    
+    # defualt arguements if ran with no args:
+    arg1 : str = ".\\input\\sample1.csv"
+    arg2 : str = "5"
+
+    if len(sys.argv) != 3:
+        print("NO ARGS ENTERED, RUNNING DEFAULT INPUTs.")
+    else:
+        arg1 = sys.argv[1]
+        arg2 = sys.argv[2]
 
     # PARSE INPUTS INTO INTENDED TYPES
     loc : str = str(arg1)
@@ -57,16 +63,27 @@ def parseCommandLineArgs():
     # get args for processor objects in correct format.
     processorConstructorArgs : list[tuple[int,...]] = readFileInput(loc)
 
-    
     print("\nProcessor Args: ",processorConstructorArgs)
     print("Quantime Time: ",quant)
 
+    # create process objects:
+    processes : list[pm.Process] = []
+
+    for args in processorConstructorArgs:
+        p = pm.Process(args[0],args[1],args[2])
+        processes.append(p)
+    
+    # return process objects and quantum number for simulation.
+    simulationInput : tuple[list[pm.Process], int] = (processes, quant)
+
+    return simulationInput
+    pass
+
     # convert process args later?.
+    
 
 # construct classes using args.
 #def setUpSystem:
-
-    
 
 parseCommandLineArgs()
 
