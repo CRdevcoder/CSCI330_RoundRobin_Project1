@@ -43,8 +43,11 @@ class ProcessHandler:
 
 
 class processState(Enum):
-    RUNNING = 0
-    READY = 1
+    NEW = "new"
+    READY = "ready"
+    RUNNING = "running"
+    TERMINATED = "terminated"
+    
 
 # process class.
 # Responsabilities:
@@ -69,15 +72,67 @@ class Process:
         self.waitingTime = 0
 
         # completion time: momment in time when process is completed.
-        self.completionTime = -1
+        self.completionTime = 0
 
         #  turnaround time
         self.turnAroundTime = 0
 
+        # current state. Process starts as new until it's added to 
+        self.state = processState.NEW
+
         print("Process Created: ID:",self.pid, "\tAT:",self.arrivalTime,"\tBT:",totalBurst)
         pass
-
     
+    # sets state.
+    def setState(self, newState : processState):
+        #print out change.
+        print("P", self.pid,"- transitions from ", self.state.name, "to",  newState.name )
+        self.state = newState
+
+    # returns current state.
+    def getState(self) -> processState:
+        return self.state
+    
+    # use to check if current state the given one.
+    # use to ask: Is process in NEW state? Running state? etc.
+    def isThisState(self,givenState : processState):
+        return self.state == givenState
+    
+    # calculate turn around time.
+    def calcTAT(self):
+        self.turnAroundTime = self.completionTime - self.arrivalTime
+        pass
+
+    # for one simulation tick in time.
+    # process should be responsable for modifying its own data.
+    # by knowing it's state it can do just that.
+    # update after preemption?
+    def tick(self, time : int):
+
+        # nothing happens at time = 0, no time elapsed.
+
+        # goes through each state. acts accordingly.
+        if self.isThisState(processState.NEW):
+            return # do nothing.
+        
+        # waiting in ready queue.
+        elif self.isThisState(processState.READY):
+            self.waitingTime += 1   
+        # running on CPU.
+        elif self.isThisState(processState.RUNNING):
+            isTerminated = self.decrementBurst()
+            if isTerminated:
+                # update state.
+                self.setState(processState.TERMINATED)
+                # sets time of completion.
+                self.completionTime = time
+
+        # check if terminated.
+        if self.isThisState(processState.TERMINATED):
+            # calculate turnaround time.
+            self.calcTAT()
+            return
+            pass
 
     # return true if terminated, false if needs more time to finish.
     def decrementBurst(self) -> bool:
@@ -95,6 +150,9 @@ class Process:
     # terminate
     def isProcessTerminated(self) -> bool:
         return ( 0 > self.currBurst)
+    
+
+
     
     # data print method.
     def __str__(self):
