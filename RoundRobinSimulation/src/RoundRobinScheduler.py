@@ -1,11 +1,13 @@
-from src.simulation import Cpu
-from src.processModule import Process
+#from src.simulation import Cpu
+from src.processModule import Process,processState
 from queue import Queue
+from collections import deque
+from enum import Enum
 
 class RoundRobinScheduler:
 
     # pass CPU object as reference. will be observed and used by scheduler.
-    def __init__(self, timeQuantum : int, cpu : Cpu, readyQueue : Queue[Process]):
+    def __init__(self, timeQuantum : int, cpu : Cpu, readyQueue : deque[Process]):
         
         self.cpu = cpu
 
@@ -17,19 +19,88 @@ class RoundRobinScheduler:
         # reference to ready Queue.
         self.readyQueue = readyQueue
 
+        # stores processes that CPU terminated.
+        self.terminatedProcesses : list[Process] = list()
+
+    # move process to ready queue. 
+    def moveProcessToReadyQueue(self,p : Process):
+
+        self.readyQueue.append(p)
+        p.setState(processState.READY)
+
 
     # selects next item in queue?
-    def selectNextProcess(self, readyQueue : Queue[Process]) -> Process | None:
+    def selectNextProcess(self, readyQueue : deque[Process]) -> Process | None:
 
         # Does queue have processes, or is it empty?
-        if readyQueue.qsize() > 0:
-            return readyQueue.get()
+        if len(readyQueue) > 0:
+            return readyQueue.popleft()
         else:
             return None # return None if empty.
         pass
     
+    def tick(self,time : int):
+
+        # what happens when process terminates? process goes to terminate list in simulation.
+        # if cpu is not running any process.
+        if self.cpu.isIdle():
+            print("@ Choosing Process to LOAD to idle CPU.")
+            # load next selected
+            selectedProcess = self.selectNextProcess(self.readyQueue)
+            # if processs avaialble, add new process to CPU.
+            if isinstance(selectedProcess,Process):
+                # reset counter
+                self.quantumCount = self.timeQuantum
+                # changes cpu state to RUNNING.
+                self.cpu.loadProcess(selectedProcess)
+                pass
+            else: 
+                print("READY QUEUE EMPTY")
+        
+        # count up idle time if still idle.
+        self.cpu.tick(time)
+
+        # check if process terminated. if so move it.
+        if self.cpu.isProcessTerminated():
+
+            p = self.cpu.unloadProcess()
+            if isinstance(p,Process):
+                # add to terminated list.
+                # set to terminated afterwards.
+                self.terminatedProcesses.append(p)
+                # reset
+                self.quantumCount = self.timeQuantum
+            else:
+                print("UNLOADING ERROR")
+        
+        if self.cpu.isRunning():
+            # run quantum:
+            if self.quantumCount > 0:
+                self.quantumCount -= 1
+                print("Q:",self.quantumCount)
+            else: # quantum ran out then preepmt to ready queue.
+                # set to idle. new process will be loaded next?
+                # context switch
+                print("TIME QUANTUM RAN OUT")
+                #
+                p = self.cpu.unloadProcess()
+                if isinstance(p,Process):
+                    # set to ready state.
+                    self.moveProcessToReadyQueue(p)
+
+                #if isinstance(p,Process):
+
+                    
+                    
+
+                    
+
+
+        
     # return terminated process if it is terminated.
+    @DeprecationWarning
     def runCpu(self) -> Process | None:
+
         # what happens when process terminates? process goes to terminate list in simulation.
 
         # if cpu is not running any process.
@@ -56,10 +127,98 @@ class RoundRobinScheduler:
             if isinstance(isTerminated,bool) and isTerminated:
                 terminatedProcess = self.cpu.getRunningProcess()
                 return terminatedProcess
-            # want to have simulation
-            # who modifies wait time? ProcessHandler.
-            # Who 
 
         pass
+
+# states of cpu. either running or idle.
+class CpuState(Enum):
+    IDLE = 1
+    RUNNING = 2
+
+# CPU.
+class Cpu:
+
+    def __init__(self):
+        # None when idle has pm.process inside when running.
+        self.runningProcess : Process | None = None
+        self.state = CpuState.IDLE
+
+        # every clock tick increment when not running and elapses one time.
+        #during context switch, do I have it take time?
+        self.idleTime = 0
+
+    def setState(self, newState : CpuState):
+        print("CPU changed from", self.state.name,"to",newState.name)
+        self.state = newState
+
+
+    def isRunning(self) -> bool:
+        if isinstance(self.runningProcess, Process):
+            return True
+        else: 
+            # nothing is running in cpu.
+            return False
+
+    def isIdle(self) -> bool:
+        b : bool= self.isRunning()
+        ans : bool = not b # invert answer.
+        return ans
+    
+    def getState(self) -> CpuState:
+        return self.state
+
+    # decrements Burst of current running process. None if nothing inside.
+    @DeprecationWarning
+    def runProcess(self) -> bool | None :
+        if type(self.runningProcess) is Process:
+            # decrement BT
+            isTerminated : bool = self.runningProcess.decrementBurst()
+            # if terminated set completion time and return.
+            return isTerminated  
+        else:
+            return None
+    
+    # what clock does at a momment in time.
+    # changes state to idle.
+    def tick(self,time : int):
+        
+        if self.isIdle():
+            self.idleTime += 1
+            print("CPU IS IDLE:", self.idleTime)
+            pass
+        
+    # load process to CPU. change state to running.
+    # Sheduler calls this method for CPU.
+    def loadProcess(self, p : Process):
+        self.runningProcess = p
+        # set CPU state to running.
+        self.setState(CpuState.RUNNING)
+        p.setState(processState.RUNNING)
+    
+    # removes current running process and returns it.
+    def unloadProcess(self) -> Process | None:
+        if not isinstance(self.runningProcess,Process):
+            return None
+        
+        p : Process = self.runningProcess # assuming its not None for now.
+        self.runningProcess = None
+        self.setState(CpuState.IDLE)
+        return p
+    
+    # is running process terminated?
+    # returns false if process still has BT left or no process running in CPU.
+    def isProcessTerminated(self):
+        #self.isRunning()
+        if isinstance(self.runningProcess, Process):
+            p : Process = self.runningProcess
+            return p.isTerminated()
+            
+        return False
+
+    
+    def getRunningProcess(self):
+        return self.runningProcess
+    
+    pass
 
         

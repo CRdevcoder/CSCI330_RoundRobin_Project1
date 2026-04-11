@@ -1,15 +1,16 @@
-from src.processModule import Process,ProcessHandler
-from enum import Enum
+from src.processModule import Process, processState,ProcessHandler
 from queue import Queue
+from collections import deque
+from src.RoundRobinScheduler import RoundRobinScheduler,Cpu
 
 # helps keeps track of events.
 # keeps track of cpu utilization. idle time and other stuff?
 class Simulator:
 
-    def __init__(self, processList : list):
+    def __init__(self, processList : list[Process]):
         
         # ready queue
-        self.readyQueue : Queue[Process] = Queue(0)
+        self.readyQueue : deque[Process] = deque()
         # terminated list:
         # terminated processes are added to here
         self.terminated : list[Process] = []
@@ -28,34 +29,61 @@ class Simulator:
         processManager = ProcessHandler(self.processData)
         simCpu : Cpu = Cpu()
 
+        scheduler : RoundRobinScheduler = RoundRobinScheduler(quantum,simCpu,self.readyQueue)
+        # now scheduler adds terminated processes to this list.
+        scheduler.terminatedProcesses = self.terminated
+
         print(self.processData)
         print(processCount)
 
         print("SIMULATION START")
         
         # SIMULATION LOOP - starts at time 0.
-        while(stopCondition and (timeCount < 20)):
+        while(stopCondition):
 
             print("# TIME =",timeCount)
 
             # step 1: update handler, get arriving processes
             arrivals : list[Process] | None= processManager.receiveNextArrival(timeCount)
             # if no arrival processes, do nothing. 
-            
+            # adding processes to ready queue.
             if (type(arrivals) is list):
                 # get processes.
                 for p in arrivals:
                     print(f"P-{p.pid} Has arrived to readyQueue")
-                    self.readyQueue.put(p)
-
-            # step 2: run scheduler.
+                    self.readyQueue.append(p)
+                    p.setState(processState.READY)
             
+            
+            # step 2: select process to run on CPU. or do nothing.
+            scheduler.tick(timeCount)
 
+            # update all processes.
+            processManager.tickAll(timeCount)
 
+            # step 2: tick clock time,
             timeCount += 1 # add 1 sec to time.
+
+            self.printReadyQueue()
+            
             stopCondition = processCount > len(self.terminated) 
-        
+            pass
+
         print("SIMULATION END")
+
+        self.printMetrics(self.terminated)
+
+        pass
+        
+    def printReadyQueue(self):
+        message = "Ready Queue:"
+        for p in self.readyQueue:
+            message += f"P{p.pid}, "
+        print(message)
+    
+    def printMetrics(self,terminatedList : list[Process]):
+        for p in terminatedList:
+            print(p)
         
 
     # simulate 1 increment of time.
@@ -70,56 +98,5 @@ class Simulator:
 
     pass
 
-# states of cpu. either running or idle.
-class CpuState(Enum):
-    IDLE = 1
-    RUNNING = 2
-
-# CPU.
-class Cpu:
-
-    def __init__(self):
-        # None when idle has pm.process inside when running.
-        self.runningProcess : Process | None = None
-        self.state = CpuState.IDLE
-
-        # every clock tick increment when not running and elapses one time.
-        #during context switch, do I have it take time?
-        self.idleTime = 0
-
-
-    def isIdle(self) -> bool:
-        if (self.runningProcess is None):
-            self.state = CpuState.IDLE
-            return True
-        else: 
-            self.state = CpuState.RUNNING
-            return False
-
-    def isRunning(self) -> bool:
-        b : bool= self.isIdle()
-        ans : bool = not b # invert answer.
-        return ans
-    
-    def getState(self) -> CpuState:
-        return self.state
-
-    # decrements Burst of current running process. None if nothing inside.
-    def runProcess(self) -> bool | None :
-        if type(self.runningProcess) is Process:
-            # decrement BT
-            isTerminated : bool = self.runningProcess.decrementBurst()
-            # if terminated set completion time and return.
-            return isTerminated  
-        else:
-            return None
-        
-    def loadProcess(self, p : Process):
-        self.runningProcess = p
-    
-    def getRunningProcess(self):
-        return self.runningProcess
-    
-    pass
 
 

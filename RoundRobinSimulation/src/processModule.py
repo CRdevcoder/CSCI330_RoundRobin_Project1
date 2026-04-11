@@ -40,7 +40,12 @@ class ProcessHandler:
             return l
         else: 
             return None
-
+    
+    # run tick for all processes.
+    def tickAll(self, time: int):
+        for p in self.processList:
+            p.tick(time)
+        
 
 class processState(Enum):
     NEW = "new"
@@ -103,6 +108,8 @@ class Process:
         self.turnAroundTime = self.completionTime - self.arrivalTime
         pass
 
+
+
     # for one simulation tick in time.
     # process should be responsable for modifying its own data.
     # by knowing it's state it can do just that.
@@ -110,6 +117,13 @@ class Process:
     def tick(self, time : int):
 
         # nothing happens at time = 0, no time elapsed.
+
+        # check if terminated.
+        if self.isThisState(processState.TERMINATED):
+            # calculate turnaround time.
+            self.calcTAT()
+            return
+            pass
 
         # goes through each state. acts accordingly.
         if self.isThisState(processState.NEW):
@@ -120,19 +134,14 @@ class Process:
             self.waitingTime += 1   
         # running on CPU.
         elif self.isThisState(processState.RUNNING):
+            # state may be switched to terminated.
             isTerminated = self.decrementBurst()
             if isTerminated:
                 # update state.
-                self.setState(processState.TERMINATED)
+                #self.setState(processState.TERMINATED)
                 # sets time of completion.
                 self.completionTime = time
 
-        # check if terminated.
-        if self.isThisState(processState.TERMINATED):
-            # calculate turnaround time.
-            self.calcTAT()
-            return
-            pass
 
     # return true if terminated, false if needs more time to finish.
     def decrementBurst(self) -> bool:
@@ -144,19 +153,18 @@ class Process:
 
         else: # if less than zero than terminated!
             print( "P", self.pid, " - terminated")
+            self.setState(processState.TERMINATED)
             return True
         return False
     
     # terminate
-    def isProcessTerminated(self) -> bool:
-        return ( 0 > self.currBurst)
-    
-
+    def isTerminated(self) -> bool:
+        return ( 0 >= self.currBurst)
 
     
     # data print method.
     def __str__(self):
-        return (f"Process: ID:{self.pid}\tAT:{self.arrivalTime}\tBT:{self.currBurst}"
+        return (f"Process: ID:{self.pid}\tAT:{self.arrivalTime}\tBT:{self.totalBurst}"
                 f"\tTAT: {self.turnAroundTime}\tWT: {self.waitingTime}\tCT: {self.completionTime}")
 
 
