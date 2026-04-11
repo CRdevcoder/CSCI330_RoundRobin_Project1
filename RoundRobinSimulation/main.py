@@ -47,8 +47,9 @@ def parseCommandLineArgs() -> tuple[list[Process], int]:
     print("ARGS: ",sys.argv)
     
     # defualt arguements if ran with no args:
-    arg1 : str = ".\\input\\sample1.csv"
-    arg2 : str = "5"
+    # .\input\sample2.csv 2
+    arg1 : str = ".\\input\\sample2.csv"
+    arg2 : str = "2"
 
     if len(sys.argv) != 3:
         print("NO ARGS ENTERED, RUNNING DEFAULT INPUTs.")
