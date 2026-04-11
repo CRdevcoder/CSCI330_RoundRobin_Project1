@@ -2,6 +2,8 @@
 # process Module and process creator
 
 from collections import defaultdict
+from enum import Enum
+
 # returns dictionary who uses process arrival time as keys and references to processes as values.
 @staticmethod
 def buildArrivalTimeDictionary( processList : list[Process]) -> defaultdict[int, list[Process]]:
@@ -40,13 +42,16 @@ class ProcessHandler:
             return None
 
 
+class processState(Enum):
+    RUNNING = 0
+    READY = 1
 
 # process class.
 # Responsabilities:
 # represent a processes in simulation.
 # keep track of how much burst time you need left before terminating.
 class Process:
-    # Enum states? NO.
+    # Enum states? 
     # Paramter meanings:
     # pid = processer id number of process.
     # arrive = arrival time, moment in time when process entered ready queue.
@@ -72,14 +77,24 @@ class Process:
         print("Process Created: ID:",self.pid, "\tAT:",self.arrivalTime,"\tBT:",totalBurst)
         pass
 
+    
+
     # return true if terminated, false if needs more time to finish.
     def decrementBurst(self) -> bool:
         # decrement by 1.
-        self.currBurst -= 1
-        if( 0 > self.currBurst):
+        if(self.currBurst > 0):
+            temp = self.currBurst
+            self.currBurst -= 1
+            print("P", self.pid," - decremented from",temp,"to",self.currBurst)
+
+        else: # if less than zero than terminated!
             print( "P", self.pid, " - terminated")
             return True
         return False
+    
+    # terminate
+    def isProcessTerminated(self) -> bool:
+        return ( 0 > self.currBurst)
     
     # data print method.
     def __str__(self):
