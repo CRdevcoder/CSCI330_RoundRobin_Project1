@@ -1,22 +1,51 @@
 # This script stores:
 # process Module and process creator
 
+from collections import defaultdict
+# returns dictionary who uses process arrival time as keys and references to processes as values.
+@staticmethod
+def buildArrivalTimeDictionary( processList : list[Process]) -> defaultdict[int, list[Process]]:
+    # automatically assigns an empty list value to keys that do not exist.
+    d : defaultdict[int, list[Process]] = defaultdict(list[Process]) 
+    for proc in processList:
+        newKey : int = proc.arrivalTime # get arrival time if process
+        d[newKey].append(proc) # append process to corresponding arrival time key.
+        
+    # return value
+    return d
+    pass
 
 # process creator class.
 # Responsabilities:
 # stores all the processor constructor data for the given scenario.
 # creates the processor and passes it to the ready queue
-class processCreator:
+class ProcessHandler:
 
-    pass
+    def __init__( self, processList : list[Process]):
+        # processes yet to be added to simulation
+        self.processList : list[Process] = processList
+        # build dictionary.
+        self.arrivalDict = buildArrivalTimeDictionary(self.processList)
+        pass
+
+    # If time given is equal to arrival time of processes in dictionary.
+    # Then return list of one or more processes with that arrival time.
+    # If no process arrives at given time, return None
+    def receiveNextArrival(self,time : int) -> list[Process] | None:
+        
+        if time in self.arrivalDict:
+            l = self.arrivalDict.get(time)
+            return l
+        else: 
+            return None
+
 
 
 # process class.
 # Responsabilities:
 # represent a processes in simulation.
 # keep track of how much burst time you need left before terminating.
-class process:
-
+class Process:
     # Enum states? NO.
     # Paramter meanings:
     # pid = processer id number of process.
@@ -34,23 +63,29 @@ class process:
         # waiting time = when in ready queue.
         self.waitingTime = 0
 
-        # completion time: current time when process is completed.
+        # completion time: momment in time when process is completed.
         self.completionTime = -1
 
-        # 
+        #  turnaround time
         self.turnAroundTime = 0
+
+        print("Process Created: ID:",self.pid, "\tAT:",self.arrivalTime,"\tBT:",totalBurst)
         pass
 
     # return true if terminated, false if needs more time to finish.
-    def decrementBurst(self, time:int ) -> bool:
+    def decrementBurst(self) -> bool:
         # decrement by 1.
         self.currBurst -= 1
         if( 0 > self.currBurst):
-            print( "(Time = ",time,") - P", self.pid, " terminated")
+            print( "P", self.pid, " - terminated")
             return True
-
         return False
+    
+    # data print method.
+    def __str__(self):
+        return (f"Process: ID:{self.pid}\tAT:{self.arrivalTime}\tBT:{self.currBurst}"
+                f"\tTAT: {self.turnAroundTime}\tWT: {self.waitingTime}\tCT: {self.completionTime}")
+
+
+    pass
   
-
-
-
