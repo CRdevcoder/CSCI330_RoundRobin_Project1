@@ -1,6 +1,7 @@
 import csv
 import sys # handles command line arguements
-import src.processModule as pm
+from src.processModule import Process
+from src.simulation import Simulator
 
 # ".\\input" + name of file in folder.
 # .\\input\sample1.csv
@@ -41,7 +42,7 @@ def readFileInput( fileLocation : str) -> list[tuple[int,...]] :
     pass
 
 # reads csv file and returns inputs for simulation.
-def parseCommandLineArgs() -> tuple[list[pm.Process], int]:
+def parseCommandLineArgs() -> tuple[list[Process], int]:
 
     print("ARGS: ",sys.argv)
     
@@ -67,14 +68,15 @@ def parseCommandLineArgs() -> tuple[list[pm.Process], int]:
     print("Quantime Time: ",quant)
 
     # create process objects:
-    processes : list[pm.Process] = []
+    processes : list[Process] = []
 
+    #
     for args in processorConstructorArgs:
-        p = pm.Process(args[0],args[1],args[2])
+        p = Process(args[0],args[1],args[2])
         processes.append(p)
     
     # return process objects and quantum number for simulation.
-    simulationInput : tuple[list[pm.Process], int] = (processes, quant)
+    simulationInput : tuple[list[Process], int] = (processes, quant)
 
     return simulationInput
     pass
@@ -83,12 +85,6 @@ def parseCommandLineArgs() -> tuple[list[pm.Process], int]:
     
 
 # construct classes using args.
-#def setUpSystem:
-
-parseCommandLineArgs()
-
-
-
-
-
-
+input = parseCommandLineArgs()
+sim = Simulator(input[0])
+sim.runSimulation(input[1])
