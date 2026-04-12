@@ -1,5 +1,4 @@
 from src.processModule import Process, processState,ProcessHandler
-from queue import Queue
 from collections import deque
 from src.RoundRobinScheduler import RoundRobinScheduler,Cpu
 
@@ -62,7 +61,7 @@ class Simulator:
             # step 2: select process to run on CPU. or do nothing.
             # cpu wont run process at time zero.
             scheduler.tick(timeCount)
-            
+
             # step 3: update all processes data according to their current state.
             processManager.tickAll(timeCount)
 
