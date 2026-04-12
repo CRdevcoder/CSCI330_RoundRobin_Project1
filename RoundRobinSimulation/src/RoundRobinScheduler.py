@@ -42,43 +42,7 @@ class RoundRobinScheduler:
             return None # return None if empty.
         pass
 
-    # Preempt current running process
-    # only run wjen process is in CPU!
-    def contextSwitch(self):
-        # get next process from ready queue.
-        pSwitch = self.selectNextProcess(self.readyQueue)
-        # false if no processes in queue or CPU not running.
-        switchPossible = isinstance(pSwitch,Process) and self.cpu.isRunning()
 
-        if switchPossible:
-            print("SWITCH DONE")
-            old = self.cpu.unloadProcess()
-            if isinstance(old,Process):
-                self.cpu.loadProcess(pSwitch)
-                self.moveProcessToReadyQueue(old)
-                #self.switchCount =+1
-            else:
-                print("SWITCH FAILURE")
-        
-        return switchPossible
-    
-    # check context switch. Check if switch happened in previous time interval.
-    # if unloaded last tick and scheduler loaded process during this tick.
-    # that means we did context switch!
-    def checkContextSwitch(self):
-        oldProcessExist = self.cpu.hadPreviousProcess()
-        currProcessExist = self.cpu.isRunning()
-        runningNewProcess = not self.cpu.isRunningPrevious()
-        print("BOTH PROCESS?", oldProcessExist,currProcessExist)
-
-        if  (oldProcessExist and currProcessExist):
-            if runningNewProcess:
-                return True
-            else:
-                return False
-        else:
-            # if previous process is same instance as. Then no context switch.
-            return False
 
 
     def preempt(self):
