@@ -87,21 +87,20 @@ class Simulator:
             message += f"P{p.pid}, "
         print(message)
     
-    def printMetrics(self,terminatedList : list[Process], cpu : Cpu, finalTime : int, switchCount : int):
+    def printMetrics(self,terminatedList : list[Process], cpu : Cpu, executionTime : int, switchCount : int):
 
         totalProcesses = len(self.terminated)
 
         print("PROCESS TERMINATION METRICS:")
         for p in terminatedList:
             print(p)
-        print("\nCPU IDLE TIME:", cpu.idleTime)
-        print("TOTAL EXECUTION TIME:", finalTime)
+        
+         # idle time:
+        idleTime = 1 - (switchCount/executionTime)
+        print("\nCPU IDLE TIME:", idleTime)
+        print("TOTAL EXECUTION TIME:", executionTime)
         print("TOTAL SWITCH COUNT:", switchCount)
-
-        # idle time:
-        #idleTime = 
-
-        #cpuUtilization = 1
+ 
 
         avgWaitingTime = 0
         # average waiting time:
@@ -116,12 +115,15 @@ class Simulator:
         avgTurnAroundTime = avgTurnAroundTime/ totalProcesses
 
         # Throughput calculation:
-        throughput = totalProcesses/ finalTime
+        throughput = totalProcesses/ executionTime
+
+        # CPU utilization:
+        cpuUtilization = ((executionTime - idleTime) / executionTime) * 100
 
         print("Avg. TurnAroundTime:",round(avgTurnAroundTime,2),"ms" )
         print("Avg. WaitingTime:",round(avgWaitingTime,2),"ms" )
         print("Throughput: ", round(throughput,2),"ms" )
-        print("CPU Utilization:","%",)
+        print("CPU Utilization:","%",round(cpuUtilization,2))
 
     pass
 
