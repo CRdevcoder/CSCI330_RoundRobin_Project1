@@ -92,6 +92,7 @@ class RoundRobinScheduler:
         next_p = self.selectNextProcess(self.readyQueue)
 
         if isinstance(next_p,Process):
+            #print("CONTEXT SWITCH: P", next_p.pid, "with P",old.pid)
             self.cpu.loadProcess(next_p)
             self.quantumCount = self.timeQuantum
             self.switchCount += 1  
@@ -109,10 +110,6 @@ class RoundRobinScheduler:
             return True
         return False
                 
-                
-
-    
-        
     
     def tick(self,time : int):
 
