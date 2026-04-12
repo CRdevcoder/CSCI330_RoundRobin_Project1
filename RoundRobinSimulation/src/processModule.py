@@ -135,28 +135,40 @@ class Process:
         # running on CPU.
         elif self.isThisState(processState.RUNNING):
             # state may be switched to terminated.
-            isTerminated = self.decrementBurst()
-            if isTerminated:
+            #isTerminated = self.decrementBurst()
+            #if isTerminated:
                 # update state.
                 #self.setState(processState.TERMINATED)
                 # sets time of completion.
-                self.completionTime = time
+                #self.completionTime = time
+            pass
 
-
-    # return true if terminated, false if needs more time to finish.
-    def decrementBurst(self) -> bool:
+# return true if terminated, false if needs more time to finish.
+    def decrementBurst(self,time : int) -> bool:
         # decrement by 1.
         if(self.currBurst > 0):
             temp = self.currBurst
             self.currBurst -= 1
             print("P", self.pid," - decremented from",temp,"to",self.currBurst)
-
-        else: # if less than zero than terminated!
+        
+        # if now less than zero than terminated!
+        if(self.currBurst <= 0):
             print( "P", self.pid, " - terminated")
             self.setState(processState.TERMINATED)
+            self.completionTime = time
             return True
+        
         return False
     
+    # change state of process.
+    def runProcess(self, time : int):
+        # state may be switched to terminated.
+        isTerminated = self.decrementBurst(time)
+        if isTerminated:
+            # sets time of completion.
+            print("CT SET")
+            self.completionTime = time
+
     # terminate
     def isTerminated(self) -> bool:
         return ( 0 >= self.currBurst)

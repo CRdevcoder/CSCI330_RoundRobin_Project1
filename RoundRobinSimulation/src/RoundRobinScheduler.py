@@ -62,7 +62,7 @@ class RoundRobinScheduler:
 
         # check if process terminated. if so move it.
         if self.cpu.isProcessTerminated():
-
+            print("# UNLOAD CPU")
             p = self.cpu.unloadProcess()
             if isinstance(p,Process):
                 # add to terminated list.
@@ -72,12 +72,15 @@ class RoundRobinScheduler:
                 self.quantumCount = self.timeQuantum
             else:
                 print("UNLOADING ERROR")
-        
+
         if self.cpu.isRunning():
             # run quantum:
             if self.quantumCount > 0:
+
                 self.quantumCount -= 1
+                #self.cpu.runProcess(time)
                 print("Q:",self.quantumCount)
+
             else: # quantum ran out then preepmt to ready queue.
                 # set to idle. new process will be loaded next?
                 # context switch
@@ -89,6 +92,9 @@ class RoundRobinScheduler:
                     self.moveProcessToReadyQueue(p)
 
                 #if isinstance(p,Process):
+
+        
+        
 
                     
                     
@@ -168,24 +174,27 @@ class Cpu:
         return self.state
 
     # decrements Burst of current running process. None if nothing inside.
-    @DeprecationWarning
-    def runProcess(self) -> bool | None :
+    #@DeprecationWarning
+    def runProcess(self,time: int) :
         if type(self.runningProcess) is Process:
             # decrement BT
-            isTerminated : bool = self.runningProcess.decrementBurst()
-            # if terminated set completion time and return.
-            return isTerminated  
+            self.runningProcess.decrementBurst(time)
         else:
-            return None
+            return 
     
     # what clock does at a momment in time.
     # changes state to idle.
     def tick(self,time : int):
-        
         if self.isIdle():
             self.idleTime += 1
             print("CPU IS IDLE:", self.idleTime)
             pass
+        elif self.isRunning():
+            print("CPU IS RUNNING")
+            self.runProcess(time)
+    
+        
+
         
     # load process to CPU. change state to running.
     # Sheduler calls this method for CPU.
@@ -199,7 +208,7 @@ class Cpu:
     def unloadProcess(self) -> Process | None:
         if not isinstance(self.runningProcess,Process):
             return None
-        
+        # don't know if process will be placed in READY or OTHER.
         p : Process = self.runningProcess # assuming its not None for now.
         self.runningProcess = None
         self.setState(CpuState.IDLE)

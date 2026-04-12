@@ -18,6 +18,17 @@ class Simulator:
         # original processes. use to construct handler.
         self.processData : list[Process] = processList
 
+    def addArrivals(self,handler : ProcessHandler,time : int):
+        arrivals : list[Process] | None = handler.receiveNextArrival(time)
+        # if no arrival processes, do nothing. 
+        # adding processes to ready queue.
+        if (type(arrivals) is list):
+            # get processes.
+            for p in arrivals:
+                print(f"P-{p.pid} Has arrived to readyQueue")
+                self.readyQueue.append(p)
+                p.setState(processState.READY)
+
 
     def runSimulation(self, quantum : int ):
 
@@ -37,6 +48,8 @@ class Simulator:
         print(processCount)
 
         print("SIMULATION START")
+
+        # enter first arrival?
         
         # SIMULATION LOOP - starts at time 0.
         while(stopCondition):
@@ -44,17 +57,8 @@ class Simulator:
             print("# TIME =",timeCount)
 
             # step 1: update handler, get arriving processes
-            arrivals : list[Process] | None= processManager.receiveNextArrival(timeCount)
-            # if no arrival processes, do nothing. 
-            # adding processes to ready queue.
-            if (type(arrivals) is list):
-                # get processes.
-                for p in arrivals:
-                    print(f"P-{p.pid} Has arrived to readyQueue")
-                    self.readyQueue.append(p)
-                    p.setState(processState.READY)
-            
-            
+            self.addArrivals(processManager,timeCount)
+
             # step 2: select process to run on CPU. or do nothing.
             scheduler.tick(timeCount)
 
@@ -65,7 +69,7 @@ class Simulator:
             timeCount += 1 # add 1 sec to time.
 
             self.printReadyQueue()
-            
+
             stopCondition = processCount > len(self.terminated) 
             pass
 
