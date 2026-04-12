@@ -38,12 +38,57 @@ class RoundRobinScheduler:
         else:
             return None # return None if empty.
         pass
+
+    # Preempt current running process
+    # only run wjen process is in CPU!
+    def contextSwitch(self):
+        # get next process from ready queue.
+        pSwitch = self.selectNextProcess(self.readyQueue)
+        # false if no processes in queue or CPU not running.
+        switchPossible = isinstance(pSwitch,Process) and self.cpu.isRunning()
+
+        if switchPossible:
+            print("SWITCH DONE")
+            old = self.cpu.unloadProcess()
+            if isinstance(old,Process):
+                self.cpu.loadProcess(pSwitch)
+                self.moveProcessToReadyQueue(old)
+            else:
+                print("SWITCH FAILURE")
+        
+        return switchPossible
+
+
+    def runQuantum(self):
+        # run quantum:
+            if self.quantumCount > 0:
+                print("Q:",self.quantumCount)
+                self.quantumCount -= 1
+                #self.cpu.runProcess(time)
+            # check quantum
+            if self.quantumCount <= 0: # quantum ran out then preepmt to ready queue.
+                # set to idle. new process will be loaded next?
+                # context switch
+                print("TIME QUANTUM RAN OUT")
+                # UNLOAD Process
+                # try context switch:
+                #if self.contextSwitch():
+                #    return
+                # if context switch not possible just unload.
+                p = self.cpu.unloadProcess()
+                if isinstance(p,Process):
+                    # set to ready state.
+                    self.moveProcessToReadyQueue(p)
+
+        
     
     def tick(self,time : int):
 
         # what happens when process terminates? process goes to terminate list in simulation.
         # if cpu is not running any process.
+        # LOADING CPU
         if self.cpu.isIdle():
+            self.quantumCount = self.timeQuantum
             print("@ Choosing Process to LOAD to idle CPU.")
             # load next selected
             selectedProcess = self.selectNextProcess(self.readyQueue)
@@ -57,6 +102,7 @@ class RoundRobinScheduler:
             else: 
                 print("READY QUEUE EMPTY")
         
+        # no time has elapsed yet.
         if time == 0:
             return
 
@@ -64,6 +110,7 @@ class RoundRobinScheduler:
         self.cpu.tick(time)
 
         # check if process terminated. if so move it.
+        # UNLOADING CPU
         if self.cpu.isProcessTerminated():
             print("# UNLOAD CPU")
             p = self.cpu.unloadProcess()
@@ -72,27 +119,14 @@ class RoundRobinScheduler:
                 # set to terminated afterwards.
                 self.terminatedProcesses.append(p)
                 # reset
-                self.quantumCount = self.timeQuantum
             else:
                 print("UNLOADING ERROR")
 
-        # if cpu is running.
+        # if cpu is running. 
+        # Check time quantum
+        # UNLOADING CPU
         if self.cpu.isRunning():
-            # run quantum:
-            if self.quantumCount > 0:
-                print("Q:",self.quantumCount)
-                self.quantumCount -= 1
-                #self.cpu.runProcess(time)
-
-            if self.quantumCount <= 0: # quantum ran out then preepmt to ready queue.
-                # set to idle. new process will be loaded next?
-                # context switch
-                print("TIME QUANTUM RAN OUT")
-                #
-                p = self.cpu.unloadProcess()
-                if isinstance(p,Process):
-                    # set to ready state.
-                    self.moveProcessToReadyQueue(p)
+            self.runQuantum()
 
                 #if isinstance(p,Process):
 

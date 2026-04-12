@@ -73,8 +73,9 @@ class Simulator:
             stopCondition = processCount > len(self.terminated) 
             pass
 
-        print("SIMULATION END")
+        print("SIMULATION END\n")
 
+        print("PROCESS TERMINATION METRICS:")
         self.printMetrics(self.terminated)
 
         pass

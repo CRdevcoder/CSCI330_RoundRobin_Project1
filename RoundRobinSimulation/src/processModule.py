@@ -106,6 +106,7 @@ class Process:
     # calculate turn around time.
     def calcTAT(self):
         self.turnAroundTime = self.completionTime - self.arrivalTime
+        self.waitingTime = self.turnAroundTime - self.totalBurst
         pass
 
 
@@ -132,6 +133,7 @@ class Process:
         # waiting in ready queue.
         elif self.isThisState(processState.READY):
             self.waitingTime += 1   
+            print("WAIT - ",self)
         # running on CPU.
         elif self.isThisState(processState.RUNNING):
             # state may be switched to terminated.
