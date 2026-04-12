@@ -77,7 +77,7 @@ class Simulator:
 
         excutionTime = (timeCount-1)
 
-        self.printMetrics(self.terminated,simCpu,excutionTime)
+        self.printMetrics(self.terminated,simCpu,excutionTime, scheduler.switchCount)
 
         pass
         
@@ -87,7 +87,7 @@ class Simulator:
             message += f"P{p.pid}, "
         print(message)
     
-    def printMetrics(self,terminatedList : list[Process], cpu : Cpu, finalTime : int):
+    def printMetrics(self,terminatedList : list[Process], cpu : Cpu, finalTime : int, switchCount : int):
 
         totalProcesses = len(self.terminated)
 
@@ -96,6 +96,7 @@ class Simulator:
             print(p)
         print("\nCPU IDLE TIME:", cpu.idleTime)
         print("TOTAL EXECUTION TIME:", finalTime)
+        print("TOTAL SWITCH COUNT:", switchCount)
 
         # idle time:
         #idleTime = 

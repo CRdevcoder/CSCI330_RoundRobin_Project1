@@ -133,7 +133,7 @@ class Process:
         # waiting in ready queue.
         elif self.isThisState(processState.READY):
             self.waitingTime += 1   
-            print("WAIT - ",self)
+            print("WAITING - P",self.pid," WT:",self.waitingTime)
         # running on CPU.
         elif self.isThisState(processState.RUNNING):
             # state may be switched to terminated.

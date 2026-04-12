@@ -10,6 +10,9 @@ class RoundRobinScheduler:
         
         self.cpu = cpu
 
+        # counts context switch:
+        self.switchCount = 0
+
         # quantum time.
         self.timeQuantum = timeQuantum
         # tracks time quantum.
@@ -20,6 +23,7 @@ class RoundRobinScheduler:
 
         # stores processes that CPU terminated.
         self.terminatedProcesses : list[Process] = list()
+
 
     # move process to ready queue. 
     def moveProcessToReadyQueue(self,p : Process):
@@ -52,10 +56,30 @@ class RoundRobinScheduler:
             if isinstance(old,Process):
                 self.cpu.loadProcess(pSwitch)
                 self.moveProcessToReadyQueue(old)
+                #self.switchCount =+1
             else:
                 print("SWITCH FAILURE")
         
         return switchPossible
+    
+    # check context switch. Check if switch happened in previous time interval.
+    # if unloaded last tick and scheduler loaded process during this tick.
+    # that means we did context switch!
+    def checkContextSwitch(self):
+        oldProcessExist = self.cpu.hadPreviousProcess()
+        currProcessExist = self.cpu.isRunning()
+        runningNewProcess = not self.cpu.isRunningPrevious()
+        print("BOTH PROCESS?", oldProcessExist,currProcessExist)
+
+        if  (oldProcessExist and currProcessExist):
+            if runningNewProcess:
+                return True
+            else:
+                return False
+        else:
+            # if previous process is same instance as. Then no context switch.
+            return False
+        
 
 
     def runQuantum(self):
@@ -73,7 +97,8 @@ class RoundRobinScheduler:
                 # try context switch:
                 #if self.contextSwitch():
                 #    return
-                # if context switch not possible just unload.
+                # if context switch not possible just unload
+                
                 p = self.cpu.unloadProcess()
                 if isinstance(p,Process):
                     # set to ready state.
@@ -87,13 +112,13 @@ class RoundRobinScheduler:
         # if cpu is not running any process.
         # LOADING CPU
         if self.cpu.isIdle():
-            self.quantumCount = self.timeQuantum
+            
             print("@ Choosing Process to LOAD to idle CPU.")
             # load next selected
             selectedProcess = self.selectNextProcess(self.readyQueue)
             # if processs avaialble, add new process to CPU.
             if isinstance(selectedProcess,Process):
-                # reset counter
+                # reset time quantum when loading new process.
                 self.quantumCount = self.timeQuantum
                 # changes cpu state to RUNNING.
                 self.cpu.loadProcess(selectedProcess)
@@ -105,14 +130,17 @@ class RoundRobinScheduler:
         if time == 0:
             return
 
+        if self.checkContextSwitch():
+            self.switchCount +=1
         # count up idle time if still idle.
         # how to count context switching?
         self.cpu.tick(time)
 
         # check if process terminated. if so move it.
         # UNLOADING CPU
+        # false if cpu already idle. use for context switching?
         if self.cpu.isProcessTerminated():
-            print("# UNLOAD CPU")
+            print("# UNLOAD TERMINATED PROCESS")
             p = self.cpu.unloadProcess()
             if isinstance(p,Process):
                 # add to terminated list.
@@ -122,23 +150,15 @@ class RoundRobinScheduler:
             else:
                 print("UNLOADING ERROR")
 
+
+
         # if cpu is running. 
         # Check time quantum
-        # UNLOADING CPU
+        # UNLOADING CPU if time quantum expired
         if self.cpu.isRunning():
             self.runQuantum()
-
-                #if isinstance(p,Process):
-
+                #if isinstance(p,Process):   
         
-        
-
-                    
-                    
-
-                    
-
-
         
     # return terminated process if it is terminated.
     @DeprecationWarning
@@ -185,6 +205,7 @@ class Cpu:
         # None when idle has pm.process inside when running.
         self.runningProcess : Process | None = None
         self.state = CpuState.IDLE
+        self.previousProcess : Process | None = None
 
         # every clock tick increment when not running and elapses one time.
         #during context switch, do I have it take time?
@@ -196,11 +217,15 @@ class Cpu:
 
 
     def isRunning(self) -> bool:
-        if isinstance(self.runningProcess, Process):
-            return True
-        else: 
-            # nothing is running in cpu.
-            return False
+        return isinstance(self.runningProcess, Process)
+    
+    def hadPreviousProcess(self) -> bool:
+        return isinstance(self.previousProcess,Process)
+    
+    def isRunningPrevious(self):
+        if self.isRunning() and self.hadPreviousProcess():
+            print("RUNNING SAME?",self.previousProcess.pid == self.runningProcess.pid)
+            return (self.previousProcess.pid == self.runningProcess.pid)
 
     def isIdle(self) -> bool:
         b : bool= self.isRunning()
@@ -222,14 +247,19 @@ class Cpu:
     # what clock does at a momment in time.
     # changes state to idle.
     def tick(self,time : int):
+        # Idle to Idle = increment.
         if self.isIdle():
             self.idleTime += 1
+            # means CPU is doing nothing within given time interval.
+            #self.previousProcess = None
             print("CPU IS IDLE:", self.idleTime)
             pass
         elif self.isRunning():
             # runs cpu.
-            print("CPU IS RUNNING")
+            print("PREVIOUS PROCESS:",self.previousProcess)
+            print("CPU IS RUNNING:",self.runningProcess)
             self.runProcess(time)
+    
     
     # load process to CPU. change state to running.
     # Sheduler calls this method for CPU.
@@ -243,6 +273,7 @@ class Cpu:
     def unloadProcess(self) -> Process | None:
         if not isinstance(self.runningProcess,Process):
             return None
+        self.previousProcess = self.runningProcess
         # don't know if process will be placed in READY or OTHER.
         p : Process = self.runningProcess # assuming its not None for now.
         self.runningProcess = None
