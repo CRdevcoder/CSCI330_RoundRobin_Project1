@@ -60,12 +60,13 @@ class Simulator:
             self.addArrivals(processManager,timeCount)
 
             # step 2: select process to run on CPU. or do nothing.
+            # cpu wont run process at time zero.
             scheduler.tick(timeCount)
-
-            # update all processes.
+            
+            # step 3: update all processes data according to their current state.
             processManager.tickAll(timeCount)
 
-            # step 2: tick clock time,
+            # step 4: tick clock time,
             timeCount += 1 # add 1 sec to time.
 
             self.printReadyQueue()
@@ -75,8 +76,9 @@ class Simulator:
 
         print("SIMULATION END\n")
 
-        print("PROCESS TERMINATION METRICS:")
-        self.printMetrics(self.terminated)
+        excutionTime = (timeCount-1)
+
+        self.printMetrics(self.terminated,simCpu,excutionTime)
 
         pass
         
@@ -86,20 +88,40 @@ class Simulator:
             message += f"P{p.pid}, "
         print(message)
     
-    def printMetrics(self,terminatedList : list[Process]):
+    def printMetrics(self,terminatedList : list[Process], cpu : Cpu, finalTime : int):
+
+        totalProcesses = len(self.terminated)
+
+        print("PROCESS TERMINATION METRICS:")
         for p in terminatedList:
             print(p)
-        
+        print("\nCPU IDLE TIME:", cpu.idleTime)
+        print("TOTAL EXECUTION TIME:", finalTime)
 
-    # simulate 1 increment of time.
-    def step(self):
+        # idle time:
+        #idleTime = 
 
-        # is CPU empty? request scheduler for process.
-        # adding process to cpu. or switching cpu.
-        # Scheduler tell CPU to switch.
-        # running -> ready = premted decision.
-        
-        pass
+        #cpuUtilization = 1
+
+        avgWaitingTime = 0
+        # average waiting time:
+        for p in self.terminated:
+            # sum
+            avgWaitingTime += p.waitingTime
+        avgWaitingTime = avgWaitingTime/ totalProcesses
+
+        avgTurnAroundTime = 0
+        for p in self.terminated:
+            avgTurnAroundTime += p.turnAroundTime
+        avgTurnAroundTime = avgTurnAroundTime/ totalProcesses
+
+        # Throughput calculation:
+        throughput = totalProcesses/ finalTime
+
+        print("Avg. TurnAroundTime:",round(avgTurnAroundTime,2),"ms" )
+        print("Avg. WaitingTime:",round(avgWaitingTime,2),"ms" )
+        print("Throughput: ", round(throughput,2),"ms" )
+        print("CPU Utilization:","%",)
 
     pass
 
