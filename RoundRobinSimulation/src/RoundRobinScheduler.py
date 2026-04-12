@@ -1,6 +1,5 @@
 #from src.simulation import Cpu
 from src.processModule import Process,processState
-from queue import Queue
 from collections import deque
 from enum import Enum
 
@@ -107,6 +106,7 @@ class RoundRobinScheduler:
             return
 
         # count up idle time if still idle.
+        # how to count context switching?
         self.cpu.tick(time)
 
         # check if process terminated. if so move it.
@@ -227,12 +227,10 @@ class Cpu:
             print("CPU IS IDLE:", self.idleTime)
             pass
         elif self.isRunning():
+            # runs cpu.
             print("CPU IS RUNNING")
             self.runProcess(time)
     
-        
-
-        
     # load process to CPU. change state to running.
     # Sheduler calls this method for CPU.
     def loadProcess(self, p : Process):
