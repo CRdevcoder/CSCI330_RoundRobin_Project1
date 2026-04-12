@@ -79,31 +79,39 @@ class RoundRobinScheduler:
         else:
             # if previous process is same instance as. Then no context switch.
             return False
-        
 
 
-    def runQuantum(self):
+    def preempt(self):
+        old = self.cpu.unloadProcess()
+        if isinstance(old,Process):
+            if old.isThisState(processState.TERMINATED):
+                self.terminatedProcesses.append(old)
+            else:
+                self.moveProcessToReadyQueue(old)
+
+        next_p = self.selectNextProcess(self.readyQueue)
+
+        if isinstance(next_p,Process):
+            self.cpu.loadProcess(next_p)
+            self.quantumCount = self.timeQuantum
+            self.switchCount += 1  
+
+    def runQuantum(self) -> bool:
         # run quantum:
-            if self.quantumCount > 0:
-                print("Q:",self.quantumCount)
-                self.quantumCount -= 1
-                #self.cpu.runProcess(time)
+        if self.quantumCount > 0:
+            print("Q:",self.quantumCount)
+            self.quantumCount -= 1
             # check quantum
-            if self.quantumCount <= 0: # quantum ran out then preepmt to ready queue.
+        if self.quantumCount <= 0: # quantum ran out then preepmt to ready queue.
                 # set to idle. new process will be loaded next?
                 # context switch
-                print("TIME QUANTUM RAN OUT")
-                # UNLOAD Process
-                # try context switch:
-                #if self.contextSwitch():
-                #    return
-                # if context switch not possible just unload
+            print("TIME QUANTUM RAN OUT")
+            return True
+        return False
                 
-                p = self.cpu.unloadProcess()
-                if isinstance(p,Process):
-                    # set to ready state.
-                    self.moveProcessToReadyQueue(p)
+                
 
+    
         
     
     def tick(self,time : int):
@@ -119,7 +127,7 @@ class RoundRobinScheduler:
             # if processs avaialble, add new process to CPU.
             if isinstance(selectedProcess,Process):
                 # reset time quantum when loading new process.
-                self.quantumCount = self.timeQuantum
+                #self.quantumCount = self.timeQuantum
                 # changes cpu state to RUNNING.
                 self.cpu.loadProcess(selectedProcess)
                 pass
@@ -130,8 +138,8 @@ class RoundRobinScheduler:
         if time == 0:
             return
 
-        if self.checkContextSwitch():
-            self.switchCount +=1
+        #if self.checkContextSwitch():
+           # self.switchCount +=1
         # count up idle time if still idle.
         # how to count context switching?
         self.cpu.tick(time)
@@ -141,23 +149,13 @@ class RoundRobinScheduler:
         # false if cpu already idle. use for context switching?
         if self.cpu.isProcessTerminated():
             print("# UNLOAD TERMINATED PROCESS")
-            p = self.cpu.unloadProcess()
-            if isinstance(p,Process):
-                # add to terminated list.
-                # set to terminated afterwards.
-                self.terminatedProcesses.append(p)
-                # reset
-            else:
-                print("UNLOADING ERROR")
-
-
-
+            self.preempt()
         # if cpu is running. 
         # Check time quantum
         # UNLOADING CPU if time quantum expired
-        if self.cpu.isRunning():
-            self.runQuantum()
-                #if isinstance(p,Process):   
+        elif self.cpu.isRunning():
+            if self.runQuantum():
+                self.preempt()
         
         
     # return terminated process if it is terminated.
