@@ -57,6 +57,9 @@ class RoundRobinScheduler:
             else: 
                 print("READY QUEUE EMPTY")
         
+        if time == 0:
+            return
+
         # count up idle time if still idle.
         self.cpu.tick(time)
 
@@ -73,15 +76,15 @@ class RoundRobinScheduler:
             else:
                 print("UNLOADING ERROR")
 
+        # if cpu is running.
         if self.cpu.isRunning():
             # run quantum:
             if self.quantumCount > 0:
-
+                print("Q:",self.quantumCount)
                 self.quantumCount -= 1
                 #self.cpu.runProcess(time)
-                print("Q:",self.quantumCount)
 
-            else: # quantum ran out then preepmt to ready queue.
+            if self.quantumCount <= 0: # quantum ran out then preepmt to ready queue.
                 # set to idle. new process will be loaded next?
                 # context switch
                 print("TIME QUANTUM RAN OUT")
