@@ -43,9 +43,6 @@ class Simulator:
         # now scheduler adds terminated processes to this list.
         scheduler.terminatedProcesses = self.terminated
 
-        print(self.processData)
-        print(processCount)
-
         print("SIMULATION START")
 
         # enter first arrival?
@@ -77,19 +74,23 @@ class Simulator:
 
         excutionTime = (timeCount-1)
 
+        print("Time Quantum:",quantum)
         self.printMetrics(self.terminated,simCpu,excutionTime, scheduler.switchCount)
 
         pass
-        
+    
     def printReadyQueue(self):
         message = "Ready Queue:"
         for p in self.readyQueue:
             message += f"P{p.pid}, "
         print(message)
     
+
     def printMetrics(self,terminatedList : list[Process], cpu : Cpu, executionTime : int, switchCount : int):
 
         totalProcesses = len(self.terminated)
+
+       
 
         print("PROCESS TERMINATION METRICS:")
         for p in terminatedList:
@@ -97,10 +98,9 @@ class Simulator:
         
          # idle time:
         idleTime = 1 - (switchCount/executionTime)
-        print("\nCPU IDLE TIME:", idleTime)
-        print("TOTAL EXECUTION TIME:", executionTime)
-        print("TOTAL SWITCH COUNT:", switchCount)
- 
+        print("\nCPU IDLE TIME:\t", round(idleTime,2),"ms")
+        print("TOTAL EXECUTION TIME:\t", executionTime,"ms")
+        print("TOTAL SWITCH COUNT:\t", switchCount)
 
         avgWaitingTime = 0
         # average waiting time:
@@ -120,10 +120,10 @@ class Simulator:
         # CPU utilization:
         cpuUtilization = ((executionTime - idleTime) / executionTime) * 100
 
-        print("Avg. TurnAroundTime:",round(avgTurnAroundTime,2),"ms" )
-        print("Avg. WaitingTime:",round(avgWaitingTime,2),"ms" )
-        print("Throughput: ", round(throughput,2),"ms" )
-        print("CPU Utilization:","%",round(cpuUtilization,2))
+        print("Avg. TurnAroundTime: \t\t",round(avgTurnAroundTime,2),"ms" )
+        print("Avg. WaitingTime: \t\t",round(avgWaitingTime,2),"ms" )
+        print("Throughput: \t\t", round(throughput,2),"ms" )
+        print("CPU Utilization: \t\t","%",round(cpuUtilization,2))
 
     pass
 
