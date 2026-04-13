@@ -30,6 +30,9 @@ class RoundRobinScheduler:
 
         self.readyQueue.append(p)
         p.setState(processState.READY)
+    
+    def isReadyQueueEmpty(self):
+        return len(self.readyQueue) == 0
 
 
     # selects next item in queue?
@@ -42,24 +45,24 @@ class RoundRobinScheduler:
             return None # return None if empty.
         pass
 
-
-
-
     def preempt(self):
-        old = self.cpu.unloadProcess()
-        if isinstance(old,Process):
-            if old.isThisState(processState.TERMINATED):
-                self.terminatedProcesses.append(old)
-            else:
-                self.moveProcessToReadyQueue(old)
 
+        old_p = self.cpu.unloadProcess()
+
+        if isinstance(old_p,Process):
+            if old_p.isThisState(processState.TERMINATED):
+                self.terminatedProcesses.append(old_p)
+            else:
+                self.moveProcessToReadyQueue(old_p)
+        
         next_p = self.selectNextProcess(self.readyQueue)
 
         if isinstance(next_p,Process):
-            #print("CONTEXT SWITCH: P", next_p.pid, "with P",old.pid)
             self.cpu.loadProcess(next_p)
             self.quantumCount = self.timeQuantum
-            self.switchCount += 1  
+            if isinstance(old_p,Process) and (next_p.pid != old_p.pid):
+                print("$ CONTEXT SWITCH: P", next_p.pid, "with P",old_p.pid)
+                self.switchCount += 1  
 
     def runQuantum(self) -> bool:
         # run quantum:
@@ -87,8 +90,6 @@ class RoundRobinScheduler:
             selectedProcess = self.selectNextProcess(self.readyQueue)
             # if processs avaialble, add new process to CPU.
             if isinstance(selectedProcess,Process):
-                # reset time quantum when loading new process.
-                #self.quantumCount = self.timeQuantum
                 # changes cpu state to RUNNING.
                 self.cpu.loadProcess(selectedProcess)
                 pass
@@ -105,18 +106,21 @@ class RoundRobinScheduler:
         # how to count context switching?
         self.cpu.tick(time)
 
-        # check if process terminated. if so move it.
+
+        # check if process terminated. if so move it to erminated list.
         # UNLOADING CPU
-        # false if cpu already idle. use for context switching?
         if self.cpu.isProcessTerminated():
-            print("# UNLOAD TERMINATED PROCESS")
             self.preempt()
-        # if cpu is running. 
-        # Check time quantum
+        # if cpu is running. Check time quantum
         # UNLOADING CPU if time quantum expired
         elif self.cpu.isRunning():
             if self.runQuantum():
+                # if ready queue is empty we do not need to preempt the running process
+                if self.isReadyQueueEmpty():
+                    self.quantumCount = self.timeQuantum
+                    return
                 self.preempt()
+                
         
 
 # states of cpu. either running or idle.
@@ -145,14 +149,6 @@ class Cpu:
     def isRunning(self) -> bool:
         return isinstance(self.runningProcess, Process)
     
-    def hadPreviousProcess(self) -> bool:
-        return isinstance(self.previousProcess,Process)
-    
-    def isRunningPrevious(self):
-        if self.isRunning() and self.hadPreviousProcess():
-            print("RUNNING SAME?",self.previousProcess.pid == self.runningProcess.pid)
-            return (self.previousProcess.pid == self.runningProcess.pid)
-
     def isIdle(self) -> bool:
         b : bool= self.isRunning()
         ans : bool = not b # invert answer.
@@ -182,8 +178,7 @@ class Cpu:
             pass
         elif self.isRunning():
             # runs cpu.
-            print("PREVIOUS PROCESS:",self.previousProcess)
-            print("CPU IS RUNNING:",self.runningProcess)
+            print("CPU IS RUNNING: P",self.runningProcess.pid)
             self.runProcess(time)
     
     
@@ -192,6 +187,7 @@ class Cpu:
     def loadProcess(self, p : Process):
         self.runningProcess = p
         # set CPU state to running.
+        print("<< CPU LOADED PROCESS: P-",p.pid)
         self.setState(CpuState.RUNNING)
         p.setState(processState.RUNNING)
     
@@ -199,11 +195,13 @@ class Cpu:
     def unloadProcess(self) -> Process | None:
         if not isinstance(self.runningProcess,Process):
             return None
-        self.previousProcess = self.runningProcess
-        # don't know if process will be placed in READY or OTHER.
+        
+        
         p : Process = self.runningProcess # assuming its not None for now.
         self.runningProcess = None
         self.setState(CpuState.IDLE)
+        # on't know if process will be placed in READY or TERMINATED.
+        print(">> UNLOADED PROCESS: P-",p.pid)
         return p
     
     # is running process terminated?
