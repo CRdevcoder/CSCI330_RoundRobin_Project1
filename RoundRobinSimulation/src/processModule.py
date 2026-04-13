@@ -161,14 +161,6 @@ class Process:
         
         return False
     
-    # change state of process.
-    def runProcess(self, time : int):
-        # state may be switched to terminated.
-        isTerminated = self.decrementBurst(time)
-        if isTerminated:
-            # sets time of completion.
-            print("CT SET")
-            self.completionTime = time
 
     # terminate
     def isTerminated(self) -> bool:
