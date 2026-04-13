@@ -106,7 +106,7 @@ class Process:
     # calculate turn around time.
     def calcTAT(self):
         self.turnAroundTime = self.completionTime - self.arrivalTime
-        self.waitingTime = self.turnAroundTime - self.totalBurst
+        #self.waitingTime = self.turnAroundTime - self.totalBurst
         pass
 
 
@@ -151,11 +151,10 @@ class Process:
         if(self.currBurst > 0):
             temp = self.currBurst
             self.currBurst -= 1
-            print("P", self.pid," - decremented from",temp,"to",self.currBurst)
+            print("P", self.pid," - BT decremented from",temp,"to",self.currBurst)
         
         # if now less than zero than terminated!
         if(self.currBurst <= 0):
-            print( "P", self.pid, " - terminated")
             self.setState(processState.TERMINATED)
             self.completionTime = time
             return True
