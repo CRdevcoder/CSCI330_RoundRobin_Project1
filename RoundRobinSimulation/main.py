@@ -3,8 +3,9 @@ import sys # handles command line arguements
 from src.processModule import Process
 from src.simulation import Simulator
 
-# ".\\input" + name of file in folder.
-# .\\input\sample1.csv
+# "..\\input" + name of file in folder.
+# In console: ..\input\sample2.csv
+# if main.py ran from RoundRobinSimulation folder directory.
 
 # reads csv input and returns data list.
 def readFileInput( fileLocation : str) -> list[tuple[int,...]] :
@@ -42,6 +43,7 @@ def readFileInput( fileLocation : str) -> list[tuple[int,...]] :
     pass
 
 # reads csv file and returns inputs for simulation.
+# Creates process objects using csv file strings.
 def parseCommandLineArgs() -> tuple[list[Process], int]:
 
     print("ARGS: ",sys.argv)
@@ -71,7 +73,7 @@ def parseCommandLineArgs() -> tuple[list[Process], int]:
     # create process objects:
     processes : list[Process] = []
 
-    #
+    # create processes.
     for args in processorConstructorArgs:
         p = Process(args[0],args[1],args[2])
         processes.append(p)
@@ -81,8 +83,6 @@ def parseCommandLineArgs() -> tuple[list[Process], int]:
 
     return simulationInput
     pass
-
-    # convert process args later?.
     
 
 # construct classes using args.

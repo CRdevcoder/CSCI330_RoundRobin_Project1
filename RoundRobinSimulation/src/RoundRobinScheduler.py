@@ -18,14 +18,14 @@ class RoundRobinScheduler:
         # tracks time quantum.
         self.quantumCount = timeQuantum
 
-        # reference to ready Queue.
+        # reference to simulation class ready Queue.
         self.readyQueue = readyQueue
 
         # stores processes that CPU terminated.
         self.terminatedProcesses : list[Process] = list()
 
 
-    # move process to ready queue. 
+    # move process to ready queue. set it's state to ready.
     def moveProcessToReadyQueue(self,p : Process):
 
         self.readyQueue.append(p)
@@ -81,7 +81,7 @@ class RoundRobinScheduler:
     def tick(self,time : int):
 
         # what happens when process terminates? process goes to terminate list in simulation.
-        # if cpu is not running any process.
+        # if cpu is not running any process, load one into it from ready queue.
         # LOADING CPU
         if self.cpu.isIdle():
             
@@ -96,12 +96,10 @@ class RoundRobinScheduler:
             else: 
                 print("READY QUEUE EMPTY")
         
-        # no time has elapsed yet.
+        # no time has elapsed yet. do not tick cpu. or process handler.
         if time == 0:
             return
 
-        #if self.checkContextSwitch():
-           # self.switchCount +=1
         # count up idle time if still idle.
         # how to count context switching?
         self.cpu.tick(time)
@@ -158,7 +156,6 @@ class Cpu:
         return self.state
 
     # decrements Burst of current running process. None if nothing inside.
-    #@DeprecationWarning
     def runProcess(self,time: int) :
         if type(self.runningProcess) is Process:
             # decrement BT
@@ -195,7 +192,6 @@ class Cpu:
     def unloadProcess(self) -> Process | None:
         if not isinstance(self.runningProcess,Process):
             return None
-        
         
         p : Process = self.runningProcess # assuming its not None for now.
         self.runningProcess = None

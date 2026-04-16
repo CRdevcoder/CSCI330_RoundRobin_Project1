@@ -67,6 +67,7 @@ class Simulator:
 
             self.printReadyQueue()
 
+            # step 5: check if number of processes is equal to number of terminated processes.
             stopCondition = processCount > len(self.terminated) 
             pass
 
@@ -126,6 +127,3 @@ class Simulator:
         print("CPU Utilization: \t\t","%",round(cpuUtilization,2))
 
     pass
-
-
-

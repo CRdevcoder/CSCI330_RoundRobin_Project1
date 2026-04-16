@@ -1,5 +1,5 @@
 # This script stores:
-# process Module and process creator
+# process Module and process hander
 
 from collections import defaultdict
 from enum import Enum
@@ -17,10 +17,13 @@ def buildArrivalTimeDictionary( processList : list[Process]) -> defaultdict[int,
     return d
     pass
 
-# process creator class.
 # Responsabilities:
-# stores all the processor constructor data for the given scenario.
-# creates the processor and passes it to the ready queue
+# does not create process objects.
+# Use to run tick method on all processes, to update their states.
+# stores all the processors for the given simulation scenario from input.
+# stores list of references to each process object.
+# calls buildArrivalTimeDictionary to create "dictionary" which is hashtable whos keys are the arrival times
+# And whos values are reference to a list of processes with that corresponding arrival time.
 class ProcessHandler:
 
     def __init__( self, processList : list[Process]):
@@ -30,7 +33,7 @@ class ProcessHandler:
         self.arrivalDict = buildArrivalTimeDictionary(self.processList)
         pass
 
-    # If time given is equal to arrival time of processes in dictionary.
+    # If time given is equal to arrival time of process list in dictionary.
     # Then return list of one or more processes with that arrival time.
     # If no process arrives at given time, return None
     def receiveNextArrival(self,time : int) -> list[Process] | None:
@@ -42,11 +45,12 @@ class ProcessHandler:
             return None
     
     # run tick for all processes.
+    # updates processes according to their current state.
     def tickAll(self, time: int):
         for p in self.processList:
             p.tick(time)
         
-
+# enum states for process:
 class processState(Enum):
     NEW = "new"
     READY = "ready"
@@ -59,7 +63,6 @@ class processState(Enum):
 # represent a processes in simulation.
 # keep track of how much burst time you need left before terminating.
 class Process:
-    # Enum states? 
     # Paramter meanings:
     # pid = processer id number of process.
     # arrive = arrival time, moment in time when process entered ready queue.
@@ -104,17 +107,15 @@ class Process:
         return self.state == givenState
     
     # calculate turn around time.
-    def calcTAT(self):
+    def calc(self):
         self.turnAroundTime = self.completionTime - self.arrivalTime
         #self.waitingTime = self.turnAroundTime - self.totalBurst
         pass
 
-
-
     # for one simulation tick in time.
-    # process should be responsable for modifying its own data.
-    # by knowing it's state it can do just that.
-    # update after preemption?
+    # process runs code according to state.
+    # only increments processes wait time when in READY state
+    # calculates turnaround time in TERMINATED state.
     def tick(self, time : int):
 
         # nothing happens at time = 0, no time elapsed.
@@ -122,7 +123,7 @@ class Process:
         # check if terminated.
         if self.isThisState(processState.TERMINATED):
             # calculate turnaround time.
-            self.calcTAT()
+            self.calc()
             return
             pass
 
@@ -136,13 +137,8 @@ class Process:
             print("WAITING - P",self.pid," WT:",self.waitingTime)
         # running on CPU.
         elif self.isThisState(processState.RUNNING):
-            # state may be switched to terminated.
-            #isTerminated = self.decrementBurst()
-            #if isTerminated:
-                # update state.
-                #self.setState(processState.TERMINATED)
-                # sets time of completion.
-                #self.completionTime = time
+            # Cpu class is made responsable for decrementing BST in running mode.
+            # decrementBurst() is called in CPU class's tick function.
             pass
 
 # return true if terminated, false if needs more time to finish.
@@ -162,11 +158,10 @@ class Process:
         return False
     
 
-    # terminate
+    # is terminated if burst time is zero.
     def isTerminated(self) -> bool:
         return ( 0 >= self.currBurst)
 
-    
     # data print method.
     def __str__(self):
         return (f"Process: ID:{self.pid}\tAT:{self.arrivalTime}\tBT:{self.totalBurst}"
