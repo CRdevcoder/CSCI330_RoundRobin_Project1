@@ -101,6 +101,8 @@ class RoundRobinScheduler:
             if isinstance(selectedProcess,Process):
                 # changes cpu state to RUNNING.
                 self.cpu.loadProcess(selectedProcess)
+                # set time quantum for loaded process:
+                self.quantumCount = self.timeQuantum
                 pass
             else: 
                 print("READY QUEUE EMPTY")
@@ -123,6 +125,7 @@ class RoundRobinScheduler:
             if self.runQuantum():
                 # if ready queue is empty we do not need to preempt the running process
                 if self.isReadyQueueEmpty():
+                    # reset time quantum.
                     self.quantumCount = self.timeQuantum
                     return
                 self.preempt()
