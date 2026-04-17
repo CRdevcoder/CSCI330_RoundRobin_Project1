@@ -45,21 +45,30 @@ class RoundRobinScheduler:
             return None # return None if empty.
         pass
 
+    # process preemption protocol
     def preempt(self):
-
+        # remove older terminated process or process whose quantum time expired.
         old_p = self.cpu.unloadProcess()
 
         if isinstance(old_p,Process):
+            # if process terminated add to terminated processes list
             if old_p.isThisState(processState.TERMINATED):
                 self.terminatedProcesses.append(old_p)
+            # Else, means process was preempted because of expired quantum time.
+            # so add process back to ready queue.
             else:
                 self.moveProcessToReadyQueue(old_p)
         
+        # request in NEW next process from ready queue!
         next_p = self.selectNextProcess(self.readyQueue)
 
+        # check the "pid" of this process.
         if isinstance(next_p,Process):
             self.cpu.loadProcess(next_p)
+            # reset quantum time.
             self.quantumCount = self.timeQuantum
+            # if new process has different id, this means a context switch occured!
+            # count up switch count.
             if isinstance(old_p,Process) and (next_p.pid != old_p.pid):
                 print("$ CONTEXT SWITCH: P", next_p.pid, "with P",old_p.pid)
                 self.switchCount += 1  
@@ -104,7 +113,6 @@ class RoundRobinScheduler:
         # how to count context switching?
         self.cpu.tick(time)
 
-
         # check if process terminated. if so move it to erminated list.
         # UNLOADING CPU
         if self.cpu.isProcessTerminated():
@@ -136,7 +144,7 @@ class Cpu:
         self.previousProcess : Process | None = None
 
         # every clock tick increment when not running and elapses one time.
-        #during context switch, do I have it take time?
+        # during context switch, do I have it take time?
         self.idleTime = 0
 
     def setState(self, newState : CpuState):
@@ -196,18 +204,18 @@ class Cpu:
         p : Process = self.runningProcess # assuming its not None for now.
         self.runningProcess = None
         self.setState(CpuState.IDLE)
-        # on't know if process will be placed in READY or TERMINATED.
+        # don't know if process will be placed in READY or TERMINATED.
         print(">> UNLOADED PROCESS: P-",p.pid)
         return p
     
     # is running process terminated?
     # returns false if process still has BT left or no process running in CPU.
     def isProcessTerminated(self):
-        #self.isRunning()
+
         if isinstance(self.runningProcess, Process):
             p : Process = self.runningProcess
             return p.isTerminated()
-            
+
         return False
 
     
